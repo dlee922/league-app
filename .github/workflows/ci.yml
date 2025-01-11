@@ -1,0 +1,65 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: sqlite
+        options: --health-cmd="sqlite3 :memory:'select 1'" --health-interval=10s --health-timeout=5s --health-retries=3
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run linting
+        run: |
+          cd backend
+          flake8 .
+
+      - name: Run tests
+        run: |
+          cd backend
+          pytest
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Run linting
+        run: |
+          cd frontend
+          npm run lint
+
+      - name: Run tests
+        run: |
+          cd frontend
+          npm test -- --watchAll=false
